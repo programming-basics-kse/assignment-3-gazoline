@@ -224,6 +224,13 @@ def main():
             result += "\n".join([f"{country}: {year} - {medals}" for country, (year, medals) in summary.items()])
             print(result)
 
+        elif command == "-top":
+            top_n, gender, age_category, weight_category, height_category = parameters
+            top_results = top_players(data, top_n, gender, age_category, weight_category, height_category)
+            result = f"Топ {top_n} гравців:\n"
+            result += "\n".join([f"{name}: {score}" for name, score in top_results])
+            print(result)
+
          elif command == "-interactive":
 
             interactive_mode(data)
