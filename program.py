@@ -21,13 +21,27 @@ def parse_arguments(args):
             raise ValueError("Для команди -total необхідно вказати рік.")
         year = args[3]
         return file_path, command, None, year, None
+
     elif command == "-overall":
         if len(args) < 4:
             raise ValueError("Для -overall необхідно вказати щонайменше одну країну.")
         countries = args[3:]
         return file_path, command, countries, None, None
+
+    elif command == "-top":
+        try:
+            top_n = int(args[3])
+            gender = args[4]
+            age_category = args[args.index("-a") + 1] if "-a" in args else None
+            weight_category = args[args.index("-w") + 1] if "-w" in args else None
+            height_category = args[args.index("-h") + 1] if "-h" in args else None
+            return file_path, command, top_n, gender, age_category, weight_category, height_category
+        except (ValueError, IndexError):
+            raise ValueError("Неправильні аргументи для команди -top.")
+
     elif command == "-interactive":
         return file_path, command, None, None, None
+
     else:
         raise ValueError(f"Trouble with: {command}")
 
@@ -41,6 +55,52 @@ def read_csv(file_path):
         if not data:
             raise ValueError("Trouble with file")
         return data
+
+def top_players(data, top_n, gender, age_category=None, weight_category=None, height_category=None):
+    age_ranges = {
+        "1": (18, 25),
+        "2": (25, 35),
+        "3": (35, 50),
+        "4": (50, float("inf")),
+    }
+
+    weight_ranges = {
+        "1": (40, 60),
+        "2": (60, 80),
+        "3": (80, 100),
+        "4": (100, float("inf")),
+    }
+
+    height_ranges = {
+        "1": (150, 175),
+        "2": (175, 190),
+        "3": (190, 200),
+        "4": (200, float("inf")),
+    }
+
+    filtered_data = [
+        row for row in data
+        if (row.get("Sex") == gender)
+        and (not age_category or age_ranges[age_category][0] <= int(row["Age"]) <= age_ranges[age_category][1])
+        and (not weight_category or weight_ranges[weight_category][0] <= float(row["Weight"]) <= weight_ranges[weight_category][1])
+        and (not height_category or height_ranges[height_category][0] <= float(row["Height"]) <= height_ranges[height_category][1])
+    ]
+
+    player_scores = {}
+    for row in filtered_data:
+        name = row.get("Name", "Unknown")
+        if name not in player_scores:
+            player_scores[name] = 0
+        if row["Medal"] == "Gold":
+            player_scores[name] += 5
+        elif row["Medal"] == "Silver":
+            player_scores[name] += 3
+        elif row["Medal"] == "Bronze":
+            player_scores[name] += 1
+
+    top_players = sorted(player_scores.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    return top_players
+
 
 def medals_per_country(data, country, year):
     filtered_data = [
